@@ -2,7 +2,11 @@ const express = require("express");
 const session = require("express-session");
 const redis = require("redis");
 const mongoose = require("mongoose");
+const userController = require("./controller/user");
 const app = express();
+app.use(express.json());
+
+const { body, validationResult } = require("express-validator");
 
 // redis session store
 let RedisStore = require("connect-redis")(session);
@@ -16,9 +20,18 @@ app.use(
   })
 );
 
-app.get();
+// define routes
+app.post(
+  "/api/user/register",
+  body("email").isEmail(),
+  body("password").isLength({ min: 6 }),
+  userController.create
+);
+
 const run = async () => {
-  const mongooseConnection = await mongoose.connect(process.env.MONGO_URL);
+  const mongooseConnection = await mongoose.connect(
+    process.env.MONGO_URL || "mongodb://localhost:27017/node-auth"
+  );
 
   const port = process.env.PORT || 8080;
   app.listen(port, () =>
