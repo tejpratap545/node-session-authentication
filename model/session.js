@@ -8,6 +8,7 @@ const SessionSchema = mongoose.Schema(
     createdByIp: String,
     destroyedAt: Date,
     isActive: Boolean,
+    userAgent: String,
   },
 
   {

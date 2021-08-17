@@ -4,9 +4,11 @@ const redis = require("redis");
 const mongoose = require("mongoose");
 const userController = require("./controller/user");
 const app = express();
+const User = require("./model/user");
 app.use(express.json());
 
 const { body, validationResult } = require("express-validator");
+const { log } = require("npmlog");
 
 // redis session store
 let RedisStore = require("connect-redis")(session);
@@ -26,6 +28,13 @@ app.post(
   body("email").isEmail(),
   body("password").isLength({ min: 6 }),
   userController.create
+);
+
+app.post(
+  "/login",
+  body("email").isEmail(),
+  body("password"),
+  userController.sessionLogin
 );
 
 const run = async () => {

@@ -1,6 +1,12 @@
 const User = require("../model/user");
+const Session = require("../model/session");
 const bcrypt = require("bcrypt");
+const express = require("express");
 
+/**
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
 exports.create = async (req, res, _) => {
   try {
     const { email } = req.body;
@@ -20,4 +26,35 @@ exports.create = async (req, res, _) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
+
+/**
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
+exports.sessionLogin = async (req, res, _) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (user)
+    return res.status(401).json({
+      message: "Invalid  Grant",
+    });
+
+  const match = await bcrypt.compare(password, user.password);
+
+  if (match) {
+    req.session.regenerate();
+    req.session.user = { id: user.id, email: user.email, name: user.name };
+
+    const session = await Session.create({
+      sessionId: req.session.id,
+      lastActivate: Date.now(),
+      createdAt: Date.now(),
+      isActive: true,
+    });
+    return res.redirect("/home");
+  }
+  return res.status(401).json({
+    message: "Invalid  Grant",
+  });
 };
