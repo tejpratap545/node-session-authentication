@@ -35,26 +35,24 @@ exports.create = async (req, res, _) => {
 exports.sessionLogin = async (req, res, _) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  if (user)
-    return res.status(401).json({
-      message: "Invalid  Grant",
-    });
+  if (user) {
+    const match = await bcrypt.compare(password, user.password);
 
-  const match = await bcrypt.compare(password, user.password);
+    if (match) {
+      req.session.user = { id: user.id, email: user.email, name: user.name };
 
-  if (match) {
-    req.session.regenerate();
-    req.session.user = { id: user.id, email: user.email, name: user.name };
-
-    const session = await Session.create({
-      sessionId: req.session.id,
-      lastActivate: Date.now(),
-      createdAt: Date.now(),
-      isActive: true,
-    });
-    return res.redirect("/home");
+      const newSession = await Session.create({
+        sessionId: req.session.id,
+        lastActivate: Date.now(),
+        createdAt: Date.now(),
+        isActive: true,
+      });
+      res.redirect("/");
+      res.end();
+    }
   }
-  return res.status(401).json({
+
+  res.status(401).json({
     message: "Invalid  Grant",
   });
 };

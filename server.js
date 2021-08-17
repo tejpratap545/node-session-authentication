@@ -5,23 +5,43 @@ const mongoose = require("mongoose");
 const userController = require("./controller/user");
 const app = express();
 const User = require("./model/user");
+const expressLayouts = require("express-ejs-layouts");
+
 app.use(express.json());
+app.use(express.urlencoded());
 
 const { body, validationResult } = require("express-validator");
 const { log } = require("npmlog");
+const Session = require("./model/session");
 
 // redis session store
-let RedisStore = require("connect-redis")(session);
-let redisClient = redis.createClient();
+const RedisStore = require("connect-redis")(session);
+const redisClient = redis.createClient({
+  host: "localhost",
+  port: 6379,
+});
+
+redisClient.on("error", function (err) {
+  console.log("Could not establish a connection with redis. " + err);
+});
+redisClient.on("connect", function (err) {
+  console.log("Connected to redis successfully");
+});
+
 app.use(
   session({
     store: new RedisStore({ client: redisClient }),
     secret: process.env.SESSION_SECERT || "sessionSecert",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
   })
 );
 
+// set the view engine to ejs
+app.set("view engine", "ejs");
+
+app.use("/css", express.static("public/css"));
+app.use("/js", express.static("public/js"));
 // define routes
 app.post(
   "/api/user/register",
@@ -32,11 +52,28 @@ app.post(
 
 app.post(
   "/login",
-  body("email").isEmail(),
-  body("password"),
+
   userController.sessionLogin
 );
 
+app.get("/", async (req, res, _) => {
+  const user = req.session.user;
+  if (!user) return res.redirect("/login");
+
+  res.json(user);
+});
+
+app.get("/login", async (req, res, _) => {
+  res.render("login");
+});
+
+app.post("/logout", async (req, res, _) => {
+  Session.findOneAndUpdate(
+    { sessionId: req.session.id },
+    { destroyedAt: Date.now(), isActive: false }
+  );
+  req.session.destroy();
+});
 const run = async () => {
   const mongooseConnection = await mongoose.connect(
     process.env.MONGO_URL || "mongodb://localhost:27017/node-auth"
