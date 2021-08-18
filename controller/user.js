@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const express = require("express");
 const Mongoose = require("mongoose");
 let redis = require("redis");
+const DeviceDetector = require("device-detector-js");
 
 /**
  * @param {express.Request} req
@@ -41,7 +42,10 @@ exports.sessionLogin = async (req, res, _) => {
     const match = await bcrypt.compare(password, user.password);
 
     if (match) {
+      const userAgent = req.headers["user-agent"];
       req.session.user = { id: user.id, email: user.email, name: user.name };
+      const deviceDetector = new DeviceDetector();
+      const device = deviceDetector.parse(userAgent);
 
       const newSession = await Session.create({
         user: user._id,
@@ -49,6 +53,9 @@ exports.sessionLogin = async (req, res, _) => {
         lastActivate: Date.now(),
         createdAt: Date.now(),
         isActive: true,
+        userAgent: userAgent,
+        os: device.os.name,
+        browser: device.client.name,
       });
       res.redirect("/");
       res.end();

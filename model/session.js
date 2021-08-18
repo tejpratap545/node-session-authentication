@@ -10,6 +10,8 @@ const SessionSchema = mongoose.Schema(
     isActive: Boolean,
     userAgent: String,
     user: { type: Schema.Types.ObjectId, ref: "User" },
+    os: String,
+    browser: String,
   },
 
   {

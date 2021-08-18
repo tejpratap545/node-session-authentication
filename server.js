@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const userController = require("./controller/user");
 const app = express();
 const User = require("./model/user");
+
 const expressLayouts = require("express-ejs-layouts");
 
 app.use(express.json());
@@ -71,6 +72,25 @@ app.get("/login", async (req, res, _) => {
   res.render("login");
 });
 
+app.get("/sessions", async (req, res, _) => {
+  const user = req.session.user;
+  const sesssions = await Session.find(
+    {
+      user: new mongoose.Types.ObjectId(user.id),
+    },
+    {},
+    {
+      sort: { isActive: -1, lastActivate: -1, createdAt: -1 },
+    }
+  );
+  const currentSession = sesssions.find(
+    (session) => session.sessionId === req.session.id
+  );
+  res.render("sessions", {
+    sesssions: sesssions,
+    currentSession: currentSession,
+  });
+});
 app.post("/logout", async (req, res, _) => {
   Session.findOneAndUpdate(
     { sessionId: req.session.id },
