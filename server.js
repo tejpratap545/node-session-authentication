@@ -55,6 +55,10 @@ app.post(
 
   userController.sessionLogin
 );
+app.get("/change-password", async (req, res, _) => {
+  res.render("changePassword");
+});
+app.post("/change-password", userController.changePassword);
 
 app.get("/", async (req, res, _) => {
   const user = req.session.user;

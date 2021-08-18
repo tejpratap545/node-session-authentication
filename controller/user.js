@@ -2,6 +2,8 @@ const User = require("../model/user");
 const Session = require("../model/session");
 const bcrypt = require("bcrypt");
 const express = require("express");
+const Mongoose = require("mongoose");
+let redis = require("redis");
 
 /**
  * @param {express.Request} req
@@ -42,6 +44,7 @@ exports.sessionLogin = async (req, res, _) => {
       req.session.user = { id: user.id, email: user.email, name: user.name };
 
       const newSession = await Session.create({
+        user: user._id,
         sessionId: req.session.id,
         lastActivate: Date.now(),
         createdAt: Date.now(),
@@ -55,4 +58,57 @@ exports.sessionLogin = async (req, res, _) => {
   res.status(401).json({
     message: "Invalid  Grant",
   });
+};
+
+/**
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
+exports.changePassword = async (req, res, _) => {
+  const { currentPassword, newPassword, confirmNewPasssword } = req.body;
+  if (newPassword === confirmNewPasssword) {
+    const sessionUser = req.session.user;
+    const user = await User.findById(sessionUser.id, { _id: 1, password: 1 });
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (match) {
+      passwordHash = await bcrypt.hash(newPassword, 10);
+      // find user by id and update password
+
+      let result = User.findByIdAndUpdate(sessionUser.id, {
+        password: passwordHash,
+      });
+
+      const userSessionFilter = {
+        user: new Mongoose.Types.ObjectId(user._id),
+        sessionId: {
+          $not: {
+            $eq: req.session.id,
+          },
+        },
+      };
+      const sessions = await Session.find(userSessionFilter, {
+        sessionId: 1,
+        _id: 1,
+      });
+      result = await Session.updateMany(userSessionFilter, {
+        destroyedAt: Date.now(),
+        isActive: false,
+      });
+
+      const redisSessionsKeys = sessions.map(
+        (session) => `sess:${session.sessionId}`
+      );
+
+      const redisclient = redis.createClient({
+        host: "localhost",
+        port: 6379,
+      });
+
+      const redisResult = redisclient.del(redisSessionsKeys);
+
+      res.redirect("/");
+      res.end();
+    }
+  }
 };
