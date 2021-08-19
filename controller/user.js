@@ -10,6 +10,7 @@ const DeviceDetector = require("device-detector-js");
  * @param {express.Request} req
  * @param {express.Response} res
  */
+
 exports.create = async (req, res, _) => {
   try {
     const { email } = req.body;

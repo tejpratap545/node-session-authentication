@@ -3,6 +3,7 @@ const session = require("express-session");
 const redis = require("redis");
 const mongoose = require("mongoose");
 const userController = require("./controller/user");
+const sessionController = require("./controller/session");
 const app = express();
 const User = require("./model/user");
 
@@ -14,7 +15,7 @@ app.use(express.urlencoded());
 const { body, validationResult } = require("express-validator");
 const { log } = require("npmlog");
 const Session = require("./model/session");
-
+const authMiddleware = require("./middleware/auth").auth;
 // redis session store
 const RedisStore = require("connect-redis")(session);
 const redisClient = redis.createClient({
@@ -59,7 +60,7 @@ app.post(
 app.get("/change-password", async (req, res, _) => {
   res.render("changePassword");
 });
-app.post("/change-password", userController.changePassword);
+app.post("/change-password", authMiddleware, userController.changePassword);
 
 app.get("/", async (req, res, _) => {
   const user = req.session.user;
@@ -72,7 +73,7 @@ app.get("/login", async (req, res, _) => {
   res.render("login");
 });
 
-app.get("/sessions", async (req, res, _) => {
+app.get("/sessions", authMiddleware, async (req, res, _) => {
   const user = req.session.user;
   const sesssions = await Session.find(
     {
@@ -91,7 +92,10 @@ app.get("/sessions", async (req, res, _) => {
     currentSession: currentSession,
   });
 });
-app.post("/logout", async (req, res, _) => {
+app.get("/session/:id", authMiddleware, sessionController.getSession);
+app.delete("/session/:id", authMiddleware, sessionController.delete);
+app.post("/session/destroy/:id", authMiddleware, sessionController.destroy);
+app.post("/logout", authMiddleware, async (req, res, _) => {
   Session.findOneAndUpdate(
     { sessionId: req.session.id },
     { destroyedAt: Date.now(), isActive: false }
