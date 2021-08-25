@@ -52,6 +52,9 @@ app.post(
   userController.create
 );
 
+app.get("/register", (req, res) => {
+  res.render("register");
+});
 app.post(
   "/login",
 

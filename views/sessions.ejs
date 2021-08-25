@@ -20,21 +20,60 @@
                 <li class="flex-item">
 
                     <div class="card">
-                        <img src="https://cdn.vox-cdn.com/thumbor/tfW8we7gL80Qz1Wia37qwMOm9Co=/0x0:2040x1360/1820x1213/filters:focal(895x304:1221x630):format(webp)/cdn.vox-cdn.com/uploads/chorus_image/image/68592461/vpavic_4291_20201113_0366.0.0.jpg"
-                            class="card-img-top" alt="...">
+
                         <div class="card-body">
-                            <%= session.id %>
-                                <h5 class="card-title">Card title</h5>
-                                <p class="card-text">Some quick example text to build on the card title and make
+                            <div class="list-group">
+
+                                <div class="list-group-item">
+                                    <span class="list-group-key"> Os : </span>
+                                    <span class="list-group-value">
+                                        <%= session.os || "None" %>
+                                    </span>
+                                </div>
+
+                                <div class="list-group-item">
+                                    <span class="list-group-key"> Browser :</span>
+                                    <span class="list-group-value">
+                                        <%= session.browser || "None " %>
+                                    </span>
+                                </div>
+
+                                <div class="list-group-item">
+                                    <span class="list-group-key"> Status :</span>
+                                    <span class="list-group-value">
+                                        <%- session.isActive ? "Active" : "Terminated" %>
+                                    </span>
+                                </div>
+
+                                <div class="list-group-item">
+                                    <span class="list-group-key"> Created At :</span>
+                                    <span class="list-group-value">
+                                        <%= session.createdAt.toISOString().slice(0, 10) %>
+                                    </span>
+                                </div>
 
 
 
-                                    up
-                                    the
-                                    bulk of the card's content.</p>
-                                <a href="#" class="btn btn-primary">Go somewhere</a>
+
+                            </div>
+
+                            <% if(session.isActive){ %>
+                                <button style=" margin-top: 5px;" class="btn btn-info"
+                                    onclick="terminateSession('<%=session%>')">Terminate Session</button>
+                                <% } else{ %>
+                                    <button class="btn btn-danger" style="margin-top: 5px;"
+                                        onclick="<%= deleteSession(session) %>">
+                                        Delete Session
+
+                                    </button>
+                                    <% } %>
+
+
+
                         </div>
+
                     </div>
+
                 </li>
                 <% }) %>
 
@@ -47,6 +86,7 @@
     </div>
 
 
+    <script src="js/session.js"></script>
 </body>
 
 

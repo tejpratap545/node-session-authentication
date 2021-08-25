@@ -18,6 +18,8 @@ const UserSchema = mongoose.Schema(
 
     phoneNumber: String,
     address: String,
+    city: String,
+    zip: String,
   },
   { timestamps: true },
   {
